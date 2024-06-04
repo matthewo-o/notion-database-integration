@@ -1,0 +1,61 @@
+{
+  "env": {
+      "node": true,
+      "browser": true,
+      "commonjs": true,
+      "es2021": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+      "ecmaVersion": "latest",
+      "sourceType": "module",
+      "project": "./tsconfig.json"
+  },
+  "plugins": ["prettier", "eslint-plugin-prettier", "unused-imports"],
+  "extends": [
+      "eslint:recommended",
+      "plugin:import/recommended",
+      "plugin:prettier/recommended",
+      "plugin:import/typescript"
+  ],
+  "rules": {
+      "comma-dangle": 0,
+      "standard-with-typescript": "off",
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "unused-imports/no-unused-imports": "error",
+      "unused-imports/no-unused-vars": [
+          "warn",
+          {
+              "vars": "all",
+              "varsIgnorePattern": "^_",
+              "args": "after-used",
+              "argsIgnorePattern": "^_"
+          }
+      ],
+      "import/order": [
+          "error",
+          {
+              "groups": [
+                  "index",
+                  "sibling",
+                  "parent",
+                  "internal",
+                  "external",
+                  "builtin",
+                  "object",
+                  "type"
+              ]
+          }
+      ]
+  },
+  "overrides": [
+      {
+          "files": ["*.ts", "*.tsx"],
+          "rules": {
+              "no-dupe-class-members": "off",
+              "no-unused-vars": "off",
+              "no-undef": "off"
+          }
+      }
+  ]
+}
