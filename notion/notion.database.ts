@@ -35,7 +35,7 @@ export class NotionDatabase {
 		return `pages/`
 	}
 
-	constructor() {
+	constructor(private notionSupportVersion: string) {
 		this.httpService = new ObsidianHttpService('https://api.notion.com/v1')
 	}
 
@@ -45,7 +45,7 @@ export class NotionDatabase {
 		this.databaseId = databaseId
 		this.headers = {
 			Authorization: `Bearer ${notionApi}`,
-			'Notion-Version': '2022-02-22',
+			'Notion-Version': this.notionSupportVersion,
 		}
 		this.httpService.setHeaders(this.headers)
 	}

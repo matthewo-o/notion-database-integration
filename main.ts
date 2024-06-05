@@ -102,7 +102,7 @@ export default class MyPlugin extends Plugin {
 	}
 
 	initPlugin() {
-		this.notionDatabase = new NotionDatabase()
+		this.notionDatabase = new NotionDatabase('2022-02-22')
 	}
 
 	onunload() {}
