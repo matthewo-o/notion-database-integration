@@ -9,12 +9,10 @@ export class ObsidianHttpService {
 	}
 
 	async get(subPath: string) {
-		const response = await requestUrl({
+		return await requestUrl({
 			url: `${this.baseUrl}/${subPath}`,
 			method: 'GET',
 			headers: this.headers,
 		})
-		console.log('Response : ', response)
-		return response
 	}
 }

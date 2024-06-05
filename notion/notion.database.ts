@@ -1,15 +1,31 @@
+import { isEmpty } from 'lodash'
 import { ObsidianHttpService } from 'obsidian-service'
+import { NotionObject, NotionProperty } from './type'
 
 export interface INotionApIHeader extends Record<string, string> {
-	'Content-Type': string
 	Authorization: string
 	'Notion-Version': string
 }
 
-export class NotionDataBase {
+export interface INotionDatabaseProperty {
+	id: string
+	name: string
+	type: NotionProperty
+}
+
+export interface INotionDatabaseInfo {
+	object: NotionObject
+	id: string
+	created_time: Date
+	last_edited_time: Date
+	url: string
+}
+
+export class NotionDatabase {
 	private headers: INotionApIHeader
 	private httpService: ObsidianHttpService
-	private databaseSubPath: string
+	private notionApi: string
+	private databaseId: string
 
 	get databasePathPrefix() {
 		return `databases/${this.databaseId}`
@@ -19,17 +35,30 @@ export class NotionDataBase {
 		return `pages/`
 	}
 
-	constructor(private notionApi: string, private databaseId: string) {
+	constructor() {
+		this.httpService = new ObsidianHttpService('https://api.notion.com/v1')
+	}
+
+	setup(params: { notionApi: string; databaseId: string }) {
+		const { notionApi, databaseId } = params
+		this.notionApi = notionApi
+		this.databaseId = databaseId
 		this.headers = {
-			'Content-Type': 'application/json',
 			Authorization: `Bearer ${notionApi}`,
 			'Notion-Version': '2022-02-22',
 		}
-		this.httpService = new ObsidianHttpService('https://api.notion.com/v1/')
 		this.httpService.setHeaders(this.headers)
 	}
 
-	async fetchDatabaseConfig() {
-		return this.httpService.get(this.databasePathPrefix)
+	private validConfig() {
+		if (isEmpty(this.notionApi) || isEmpty(this.databaseId)) {
+			throw new Error('Database config not ready')
+		}
+	}
+
+	async fetchDatabaseInfo() {
+		this.validConfig()
+		const response = await this.httpService.get(this.databasePathPrefix)
+		return response.json
 	}
 }
