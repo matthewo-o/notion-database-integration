@@ -81,33 +81,6 @@ export class NotionDatabase {
 	): Extract<NotionDatabaseProperty, { type: Type }> | undefined {
 		const detail = this.info.properties[propertyName]
 		if (isNil(detail) || detail.type !== type) return undefined
-		switch (detail.type) {
-			case NotionProperty.Checkbox:
-				return detail as Extract<ICheckboxProperty, { type: Type }>
-			case NotionProperty.CreatedAt:
-				return detail as Extract<ICreatedAtProperty, { type: Type }>
-			case NotionProperty.Date:
-				return detail as Extract<IDateProperty, { type: Type }>
-			case NotionProperty.Email:
-				return detail as Extract<IEmailProperty, { type: Type }>
-			case NotionProperty.Files:
-				return detail as Extract<IFileProperty, { type: Type }>
-			case NotionProperty.LastEditedAt:
-				return detail as Extract<ILastEditAtProperty, { type: Type }>
-			case NotionProperty.Tag:
-				return detail as Extract<ITagProperty, { type: Type }>
-			case NotionProperty.Number:
-				return detail as Extract<INumberProperty, { type: Type }>
-			case NotionProperty.Text:
-				return detail as Extract<ITextProperty, { type: Type }>
-			case NotionProperty.Select:
-				return detail as Extract<ISelectProperty, { type: Type }>
-			case NotionProperty.Title:
-				return detail as Extract<ITitleProperty, { type: Type }>
-			case NotionProperty.URL:
-				return detail as Extract<IURLProperty, { type: Type }>
-			default:
-				return undefined
-		}
+		return detail as Extract<NotionDatabaseProperty, { type: Type }>
 	}
 }
