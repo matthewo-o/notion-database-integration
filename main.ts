@@ -1,6 +1,6 @@
 import { isNil } from 'lodash'
-import { NotionDatabase, NotionProperty } from 'notion'
-import { NotionPageStyleBuilder } from 'notion/notion-style.builder'
+import { NotionDatabase, NotionProperty, NotionPageStyleBuilder } from 'notion'
+import { addNotionIcon, notionLogoIconkey } from 'notion/icon'
 import {
 	App,
 	Editor,
@@ -10,7 +10,9 @@ import {
 	Plugin,
 	PluginSettingTab,
 	Setting,
+	Vault,
 } from 'obsidian'
+import { NotionDatabaseFolder } from 'obsidian-service'
 
 // Remember to rename these classes and interfaces!
 
@@ -18,30 +20,35 @@ interface MyPluginSettings {
 	mySetting: string
 	notionApi: string
 	databaseId: string
+	pageTitleColumnName: string
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: 'default',
 	notionApi: '',
 	databaseId: '',
+	pageTitleColumnName: '',
 }
 
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings
 	notionDatabase: NotionDatabase
 	styleBuilder: NotionPageStyleBuilder
+	databaseFolder: NotionDatabaseFolder
 
 	async onload() {
-		await this.loadSettings()
 		this.initPlugin()
+		await this.loadSettings()
 
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon(
-			'dice',
-			'Sample Plugin',
-			(evt: MouseEvent) => {
+			notionLogoIconkey,
+			'Fetch Notion Database',
+			async (evt: MouseEvent) => {
 				// Called when the user clicks the icon.
-				new Notice('This is a notice!')
+				new Notice('Fetching notion database')
+				await this.setupDatabaseFolder(this.app.vault)
+				await this.databaseFolder.buildPropertiesFile()
 			},
 		)
 		// Perform additional things with the ribbon
@@ -115,6 +122,7 @@ export default class MyPlugin extends Plugin {
 	initPlugin() {
 		this.notionDatabase = new NotionDatabase('2022-02-22')
 		this.styleBuilder = new NotionPageStyleBuilder()
+		addNotionIcon()
 	}
 
 	onunload() {}
@@ -125,11 +133,29 @@ export default class MyPlugin extends Plugin {
 			DEFAULT_SETTINGS,
 			await this.loadData(),
 		)
+		this.notionDatabase.setup(this.settings)
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings)
 		this.notionDatabase.setup(this.settings)
+	}
+
+	async setupDatabaseFolder(vault: Vault) {
+		await this.notionDatabase.fetchDatabaseInfo()
+		const label = this.notionDatabase.label
+		let folder = vault.getFolderByPath(label)
+		if (isNil(folder)) {
+			folder = await vault.createFolder(label)
+			new Notice(`New Folder ${label} was created`)
+		}
+		this.databaseFolder = new NotionDatabaseFolder(
+			folder,
+			this.notionDatabase,
+			this.settings.pageTitleColumnName,
+		)
+		await this.databaseFolder.buildData()
+		new Notice(`Fetch Notion Success`)
 	}
 }
 
@@ -197,6 +223,19 @@ class SampleSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.databaseId)
 					.onChange(async (value) => {
 						this.plugin.settings.databaseId = value
+						await this.plugin.saveSettings()
+					}),
+			)
+
+		new Setting(containerEl)
+			.setName('Data Page Title Column')
+			.setDesc('It will become your page title of each data')
+			.addText((text) =>
+				text
+					.setPlaceholder('Enter Title column name')
+					.setValue(this.plugin.settings.pageTitleColumnName)
+					.onChange(async (value) => {
+						this.plugin.settings.pageTitleColumnName = value
 						await this.plugin.saveSettings()
 					}),
 			)

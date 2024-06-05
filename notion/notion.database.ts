@@ -1,43 +1,44 @@
 import { isEmpty, isNil } from 'lodash'
 import { ObsidianHttpService } from 'obsidian-service'
 import {
-	ICheckboxProperty,
-	ICreatedAtProperty,
-	IDateProperty,
-	IEmailProperty,
-	IFileProperty,
-	ILastEditAtProperty,
-	INumberProperty,
-	ISelectProperty,
-	ITagProperty,
-	ITextProperty,
-	ITitleProperty,
-	IURLProperty,
 	NotionDatabaseProperty,
 	NotionObject,
-	NotionProperty,
+	NotionPageProperty,
+	IRichText,
 } from './type'
-
-export interface INotionApIHeader extends Record<string, string> {
-	Authorization: string
-	'Notion-Version': string
-}
 
 export interface INotionDatabaseInfo {
 	object: NotionObject
 	id: string
+	title: IRichText[]
 	created_time: Date
 	last_edited_time: Date
 	url: string
 	properties: Record<string, NotionDatabaseProperty>
 }
 
+export interface INotionDatabasePageResult {
+	object: NotionObject
+	results: IPageData[]
+	next_cursor: string | null | undefined
+	has_more: boolean
+}
+
+export interface IPageData {
+	object: NotionObject
+	id: string
+	created_time: Date
+	last_edited_time: Date
+	properties: Record<string, NotionPageProperty>
+	url: string
+}
+
 export class NotionDatabase {
-	private headers: INotionApIHeader
 	private httpService: ObsidianHttpService
 	private notionApi: string
 	private databaseId: string
 	private info: INotionDatabaseInfo
+	private datas: IPageData[]
 
 	get databasePathPrefix() {
 		return `databases/${this.databaseId}`
@@ -45,6 +46,30 @@ export class NotionDatabase {
 
 	get pagePathPrefix() {
 		return `pages`
+	}
+
+	get label() {
+		return isEmpty(this.info.title)
+			? this.info.id
+			: this.info.title[0].plain_text
+	}
+
+	get properties() {
+		return this.info.properties
+	}
+
+	get baseHeader() {
+		return {
+			Authorization: `Bearer ${this.notionApi}`,
+			'Notion-Version': this.notionSupportVersion,
+		}
+	}
+
+	get postHeader() {
+		return {
+			...this.baseHeader,
+			'Content-Type': 'application/json',
+		}
 	}
 
 	constructor(private notionSupportVersion: string) {
@@ -55,11 +80,6 @@ export class NotionDatabase {
 		const { notionApi, databaseId } = params
 		this.notionApi = notionApi
 		this.databaseId = databaseId
-		this.headers = {
-			Authorization: `Bearer ${notionApi}`,
-			'Notion-Version': this.notionSupportVersion,
-		}
-		this.httpService.setHeaders(this.headers)
 	}
 
 	private validConfig() {
@@ -70,9 +90,35 @@ export class NotionDatabase {
 
 	async fetchDatabaseInfo() {
 		this.validConfig()
+		this.httpService.setHeaders(this.baseHeader)
 		this.info = await this.httpService.get<INotionDatabaseInfo>(
 			this.databasePathPrefix,
 		)
+	}
+
+	async fetchAllData() {
+		this.validConfig()
+		this.datas = []
+		this.httpService.setHeaders(this.postHeader)
+		let pageResult: INotionDatabasePageResult = {
+			object: NotionObject.List,
+			results: [],
+			next_cursor: undefined,
+			has_more: false,
+		}
+		do {
+			let body = isNil(pageResult.next_cursor)
+				? {}
+				: { start_cursor: pageResult.next_cursor }
+			console.log('Request Body : ', body)
+			pageResult = await this.httpService.post<INotionDatabasePageResult>(
+				`${this.databasePathPrefix}/query`,
+				body,
+			)
+			console.log('Page Result : ', pageResult)
+			this.datas.push(...pageResult.results)
+		} while (pageResult.has_more)
+		return this.datas
 	}
 
 	tryGetPropertyAsType<Type extends NotionDatabaseProperty['type']>(

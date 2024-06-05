@@ -1,8 +1,21 @@
 export enum NotionObject {
 	Database = 'database',
+	List = 'list',
+	Page = 'page',
 }
 
 // https://developers.notion.com/reference/property,object
+
+export enum BlockType {
+	Text = 'text',
+	Mention = 'mention',
+	Equation = 'equation',
+}
+
+export interface IRichText {
+	type: BlockType
+	plain_text: string
+}
 
 export enum NotionNumberFormat {
 	argentine_peso,
@@ -69,20 +82,20 @@ export enum NotionProperty {
 	URL = 'url',
 	Email = 'email',
 }
-
+//#region Database Propery
 export type NotionDatabaseProperty =
-	| ICheckboxProperty
-	| ICreatedAtProperty
-	| IDateProperty
-	| IEmailProperty
-	| IFileProperty
-	| ILastEditAtProperty
-	| ITagProperty
-	| INumberProperty
-	| ITextProperty
-	| ISelectProperty
-	| ITitleProperty
-	| IURLProperty
+	| ICheckboxDatabaseProperty
+	| ICreatedAtDatabaseProperty
+	| IDateDatabaseProperty
+	| IEmailDatabaseProperty
+	| IFileDatabaseProperty
+	| ILastEditAtDatabaseProperty
+	| ITagDatabaseProperty
+	| INumberDatabaseProperty
+	| ITextDatabaseProperty
+	| ISelectDatabaseProperty
+	| ITitleDatabaseProperty
+	| IURLDatabaseProperty
 
 export interface INotionDatabaseProperty {
 	id: string
@@ -90,47 +103,68 @@ export interface INotionDatabaseProperty {
 	type: NotionProperty
 }
 
-export interface ICheckboxProperty extends INotionDatabaseProperty {
+export interface ICheckboxDatabaseProperty extends INotionDatabaseProperty {
 	type: NotionProperty.Checkbox
 }
-export interface ICreatedAtProperty extends INotionDatabaseProperty {
+export interface ICreatedAtDatabaseProperty extends INotionDatabaseProperty {
 	type: NotionProperty.CreatedAt
 }
-export interface IDateProperty extends INotionDatabaseProperty {
+export interface IDateDatabaseProperty extends INotionDatabaseProperty {
 	type: NotionProperty.Date
 }
-export interface IEmailProperty extends INotionDatabaseProperty {
+export interface IEmailDatabaseProperty extends INotionDatabaseProperty {
 	type: NotionProperty.Email
 }
-export interface IFileProperty extends INotionDatabaseProperty {
+export interface IFileDatabaseProperty extends INotionDatabaseProperty {
 	//Update 2024-6-5 Notion API not support upload file
 	type: NotionProperty.Files
 }
-export interface ILastEditAtProperty extends INotionDatabaseProperty {
+export interface ILastEditAtDatabaseProperty extends INotionDatabaseProperty {
 	type: NotionProperty.LastEditedAt
 }
-export interface ITagProperty extends INotionDatabaseProperty {
+export interface ITagDatabaseProperty extends INotionDatabaseProperty {
 	type: NotionProperty.Tag
 	multi_select: {
 		options: INotionSelectOption[]
 	}
 }
-export interface INumberProperty extends INotionDatabaseProperty {
+export interface INumberDatabaseProperty extends INotionDatabaseProperty {
 	type: NotionProperty.Number
 	number: { format: NotionNumberFormat }
 }
-export interface ITextProperty extends INotionDatabaseProperty {
+export interface ITextDatabaseProperty extends INotionDatabaseProperty {
 	type: NotionProperty.Text
 }
-export interface ISelectProperty extends INotionDatabaseProperty {
+export interface ISelectDatabaseProperty extends INotionDatabaseProperty {
 	type: NotionProperty.Select
 	select: {
 		options: INotionSelectOption[]
 	}
 }
-export interface ITitleProperty extends INotionDatabaseProperty {
+export interface ITitleDatabaseProperty extends INotionDatabaseProperty {
 	type: NotionProperty.Title
 }
-export interface IURLProperty extends INotionDatabaseProperty {
+export interface IURLDatabaseProperty extends INotionDatabaseProperty {
 	type: NotionProperty.URL
 }
+//#endregion
+
+//#region Page Property
+
+export type NotionPageProperty = ITextPageProperty | ITitlePageProperty
+
+export interface INotionPageProperty {
+	id: string
+	type: NotionProperty
+}
+
+export interface ITextPageProperty extends INotionPageProperty {
+	type: NotionProperty.Text
+	rich_text: IRichText[]
+}
+
+export interface ITitlePageProperty extends INotionDatabaseProperty {
+	type: NotionProperty.Title
+	title: IRichText[]
+}
+//#endregion

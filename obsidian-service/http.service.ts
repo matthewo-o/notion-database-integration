@@ -16,4 +16,14 @@ export class ObsidianHttpService {
 		})
 		return reponse.json as T
 	}
+
+	async post<T>(subPath: string, body?: any) {
+		const reponse = await requestUrl({
+			url: `${this.baseUrl}/${subPath}`,
+			method: 'POST',
+			headers: this.headers,
+			body: JSON.stringify(body),
+		})
+		return reponse.json as T
+	}
 }
