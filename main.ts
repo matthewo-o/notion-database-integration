@@ -1,4 +1,6 @@
-import { NotionDatabase } from 'notion'
+import { isNil } from 'lodash'
+import { NotionDatabase, NotionProperty } from 'notion'
+import { NotionPageStyleBuilder } from 'notion/notion-style.builder'
 import {
 	App,
 	Editor,
@@ -27,6 +29,7 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings
 	notionDatabase: NotionDatabase
+	styleBuilder: NotionPageStyleBuilder
 
 	async onload() {
 		await this.loadSettings()
@@ -53,7 +56,11 @@ export default class MyPlugin extends Plugin {
 			id: 'open-sample-modal-simple',
 			name: 'Open sample modal (simple)',
 			callback: () => {
-				new SampleModal(this.app, this.notionDatabase).open()
+				new SampleModal(
+					this.app,
+					this.notionDatabase,
+					this.styleBuilder,
+				).open()
 			},
 		})
 		// This adds an editor command that can perform some operation on the current editor instance
@@ -77,7 +84,11 @@ export default class MyPlugin extends Plugin {
 					// If checking is true, we're simply "checking" if the command can be run.
 					// If checking is false, then we want to actually perform the operation.
 					if (!checking) {
-						new SampleModal(this.app, this.notionDatabase).open()
+						new SampleModal(
+							this.app,
+							this.notionDatabase,
+							this.styleBuilder,
+						).open()
 					}
 
 					// This command will only show up in Command Palette when the check function returns true
@@ -103,6 +114,7 @@ export default class MyPlugin extends Plugin {
 
 	initPlugin() {
 		this.notionDatabase = new NotionDatabase('2022-02-22')
+		this.styleBuilder = new NotionPageStyleBuilder()
 	}
 
 	onunload() {}
@@ -122,20 +134,26 @@ export default class MyPlugin extends Plugin {
 }
 
 class SampleModal extends Modal {
-	constructor(app: App, private database: NotionDatabase) {
+	constructor(
+		app: App,
+		private database: NotionDatabase,
+		private styleBuilder: NotionPageStyleBuilder,
+	) {
 		super(app)
 	}
 
 	async onOpen() {
 		const { contentEl } = this
-		await this.database
-			.fetchDatabaseInfo()
-			.then((result) => {
-				contentEl.setText(`Database : ${JSON.stringify(result)}`)
-			})
-			.catch((error) => {
-				console.log('Error : ', JSON.stringify(error))
-			})
+		await this.database.fetchDatabaseInfo()
+		const tagProperty = this.database.tryGetPropertyAsType(
+			'Tags',
+			NotionProperty.Tag,
+		)
+		var tags = isNil(tagProperty)
+			? ['Test A', 'Test B']
+			: tagProperty.multi_select.options.map((option) => option.name)
+
+		contentEl.setText(this.styleBuilder.displayTags(tags))
 	}
 
 	onClose() {

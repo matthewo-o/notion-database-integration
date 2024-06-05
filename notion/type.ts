@@ -55,6 +55,7 @@ export interface INotionSelectOption {
 }
 
 export enum NotionProperty {
+	Undefined = 'undefined',
 	Checkbox = 'checkbox',
 	Number = 'number',
 	Text = 'rich_text',
@@ -68,6 +69,20 @@ export enum NotionProperty {
 	URL = 'url',
 	Email = 'email',
 }
+
+export type NotionDatabaseProperty =
+	| ICheckboxProperty
+	| ICreatedAtProperty
+	| IDateProperty
+	| IEmailProperty
+	| IFileProperty
+	| ILastEditAtProperty
+	| ITagProperty
+	| INumberProperty
+	| ITextProperty
+	| ISelectProperty
+	| ITitleProperty
+	| IURLProperty
 
 export interface INotionDatabaseProperty {
 	id: string
@@ -96,6 +111,9 @@ export interface ILastEditAtProperty extends INotionDatabaseProperty {
 }
 export interface ITagProperty extends INotionDatabaseProperty {
 	type: NotionProperty.Tag
+	multi_select: {
+		options: INotionSelectOption[]
+	}
 }
 export interface INumberProperty extends INotionDatabaseProperty {
 	type: NotionProperty.Number
