@@ -1,16 +1,10 @@
 import { isEmpty } from 'lodash'
 import { ObsidianHttpService } from 'obsidian-service'
-import { NotionObject, NotionProperty } from './type'
+import { INotionDatabaseProperty, NotionObject, NotionProperty } from './type'
 
 export interface INotionApIHeader extends Record<string, string> {
 	Authorization: string
 	'Notion-Version': string
-}
-
-export interface INotionDatabaseProperty {
-	id: string
-	name: string
-	type: NotionProperty
 }
 
 export interface INotionDatabaseInfo {
@@ -19,6 +13,7 @@ export interface INotionDatabaseInfo {
 	created_time: Date
 	last_edited_time: Date
 	url: string
+	properties: Record<string, INotionDatabaseProperty>
 }
 
 export class NotionDatabase {
@@ -58,7 +53,8 @@ export class NotionDatabase {
 
 	async fetchDatabaseInfo() {
 		this.validConfig()
-		const response = await this.httpService.get(this.databasePathPrefix)
-		return response.json
+		return await this.httpService.get<INotionDatabaseInfo>(
+			this.databasePathPrefix,
+		)
 	}
 }
