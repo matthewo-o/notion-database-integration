@@ -21,6 +21,7 @@ interface MyPluginSettings {
 	notionApi: string
 	databaseId: string
 	pageTitleColumnName: string
+	tagColumns: string[]
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
@@ -28,6 +29,7 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 	notionApi: '',
 	databaseId: '',
 	pageTitleColumnName: '',
+	tagColumns: [],
 }
 
 export default class MyPlugin extends Plugin {
@@ -153,6 +155,7 @@ export default class MyPlugin extends Plugin {
 			folder,
 			this.notionDatabase,
 			this.settings.pageTitleColumnName,
+			this.settings.tagColumns,
 		)
 		await this.databaseFolder.buildData()
 		new Notice(`Fetch Notion Success`)
@@ -236,6 +239,19 @@ class SampleSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.pageTitleColumnName)
 					.onChange(async (value) => {
 						this.plugin.settings.pageTitleColumnName = value
+						await this.plugin.saveSettings()
+					}),
+			)
+
+		new Setting(containerEl)
+			.setName('Tags Columns')
+			.setDesc('Group all columns value as tag, seperate column with [,]')
+			.addText((text) =>
+				text
+					.setPlaceholder('Enter column names')
+					.setValue(this.plugin.settings.tagColumns.join(','))
+					.onChange(async (value) => {
+						this.plugin.settings.tagColumns = value.split(',')
 						await this.plugin.saveSettings()
 					}),
 			)

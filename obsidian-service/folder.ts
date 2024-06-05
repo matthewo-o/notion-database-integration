@@ -1,13 +1,15 @@
-import { isNil, keyBy } from 'lodash'
+import { compact, isNil, keyBy } from 'lodash'
 import {
 	IPageData,
 	ITextPageProperty,
 	ITitlePageProperty,
 	NotionDatabase,
 	NotionDatabaseProperty,
+	NotionPageProperty,
 	NotionProperty,
 } from 'notion'
 import { Notice, TFolder, Vault } from 'obsidian'
+import { pageAttributes } from './tools'
 
 export class NotionDatabaseFolder {
 	private static Property = 'Property'
@@ -22,6 +24,7 @@ export class NotionDatabaseFolder {
 		private folder: TFolder,
 		private database: NotionDatabase,
 		private titleColumn: string,
+		private tagColumns: string[],
 	) {
 		this.vault = folder.vault
 	}
@@ -56,10 +59,11 @@ export class NotionDatabaseFolder {
 		await Promise.all(
 			data.map((page) => {
 				let title = this.getPageTitle(page)
-				let file = fileMap[title]
-				let content = NotionDatabaseFolder.buildDataPage(page)
+				let filename = `${title}.md`
+				let file = fileMap[filename]
+				let content = this.buildDataPage(page)
 				return isNil(file)
-					? this.vault.create(`${folder.path}/${title}.md`, content)
+					? this.vault.create(`${folder.path}/${filename}`, content)
 					: this.vault.modify(file, content)
 			}),
 		)
@@ -95,17 +99,43 @@ export class NotionDatabaseFolder {
 		return `---\n${attributes.join('\n')}\n---`
 	}
 
-	private static buildDataPage(page: IPageData) {
+	private buildDataPage(page: IPageData) {
 		const idAttributes = `ID : ${page.id}`
 		const createdAt = `Created At : ${page.created_time}`
 		const lastUpdatedAt = `Last Updated At : ${page.last_edited_time}`
 		const url = `URL : ${page.url}`
+		const tags = compact(
+			this.tagColumns.flatMap((column) => {
+				const property = page.properties[column]
+				if (isNil(property)) return null
+				return this.transformPropertyAsTags(property)
+			}),
+		)
+		const tagTitle = `Tags : ${tags}`
 		const attributes = Object.keys(page.properties).map((property) => {
 			var info = page.properties[property]
 			return `${property} : ${info.type}`
 		})
-		return `---\n${idAttributes}\n${attributes.join(
-			'\n',
-		)}\n${createdAt}\n${lastUpdatedAt}\n${url}\n---`
+		return pageAttributes([
+			idAttributes,
+			tagTitle,
+			...attributes,
+			createdAt,
+			lastUpdatedAt,
+			url,
+		])
+	}
+
+	transformPropertyAsTags(property: NotionPageProperty): string[] {
+		switch (property.type) {
+			case NotionProperty.Tag:
+				return property.multi_select.map((option) => option.name)
+			case NotionProperty.Text:
+				return property.rich_text.map((text) => text.plain_text)
+			case NotionProperty.Title:
+				return property.title.map((title) => title.plain_text)
+			default:
+				return []
+		}
 	}
 }

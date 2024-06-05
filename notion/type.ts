@@ -151,7 +151,10 @@ export interface IURLDatabaseProperty extends INotionDatabaseProperty {
 
 //#region Page Property
 
-export type NotionPageProperty = ITextPageProperty | ITitlePageProperty
+export type NotionPageProperty =
+	| ITextPageProperty
+	| ITitlePageProperty
+	| ITagPageProperty
 
 export interface INotionPageProperty {
 	id: string
@@ -163,8 +166,14 @@ export interface ITextPageProperty extends INotionPageProperty {
 	rich_text: IRichText[]
 }
 
-export interface ITitlePageProperty extends INotionDatabaseProperty {
+export interface ITitlePageProperty extends INotionPageProperty {
 	type: NotionProperty.Title
 	title: IRichText[]
 }
+
+export interface ITagPageProperty extends INotionPageProperty {
+	type: NotionProperty.Tag
+	multi_select: INotionSelectOption[]
+}
+
 //#endregion
